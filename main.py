@@ -34,13 +34,12 @@ class LiveSignTranslator:
 
     def run(self):
         cap = cv2.VideoCapture(0)
-        time.sleep(1) # Dá 1 segundo para a câmera ajustar a luz
+        time.sleep(1)
 
         while True:
             ret, frame = cap.read()
             if not ret: break
 
-            # Converte para preto e branco e borra para detecção de movimento
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
@@ -48,7 +47,6 @@ class LiveSignTranslator:
                 self.previous_frame = gray
                 continue
 
-            # Calcula a diferença de movimento
             frame_diff = cv2.absdiff(self.previous_frame, gray)
             thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)[1]
             thresh = cv2.dilate(thresh, None, iterations=2)
