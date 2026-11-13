@@ -1,13 +1,10 @@
-.env
-
+# Ambientes e arquivos locais
+.venv/
 venv/
-env/
-ENV/
-
-temp_videos/
-*.mp4
-*.jpg
-
+.env
+.env.*
 __pycache__/
 *.py[cod]
-*$py.class
+
+# Vídeos temporários de processamento
+movimento_temp.mp4
