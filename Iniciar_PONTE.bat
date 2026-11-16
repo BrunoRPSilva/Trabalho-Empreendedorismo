@@ -10,12 +10,17 @@ echo ===========================================
 echo.
 
 if not exist "interface.py" goto ERRO_ARQUIVOS
+<<<<<<< HEAD
 if not exist "requirements.txt" goto ERRO_ARQUIVOS
+=======
+if not exist "requirements-interface.txt" goto ERRO_ARQUIVOS
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 
 set "PYTHON_VENV=%CD%\.venv\Scripts\python.exe"
 if exist "%PYTHON_VENV%" goto CHECAR_DEPENDENCIAS
 
 echo [1/3] Criando ambiente virtual...
+<<<<<<< HEAD
 where py >nul 2>&1
 if not errorlevel 1 (
     py -3 -m venv ".venv"
@@ -24,20 +29,44 @@ if not errorlevel 1 (
     if errorlevel 1 goto ERRO_PYTHON
     python -m venv ".venv"
 )
+=======
+python -c "import sys; sys.exit(sys.version_info < (3, 10))" >nul 2>&1
+if errorlevel 1 goto USAR_PY
+python -m venv ".venv"
+goto CHECAR_VENV
+
+:USAR_PY
+py -3 -c "import sys; sys.exit(sys.version_info < (3, 10))" >nul 2>&1
+if errorlevel 1 goto ERRO_PYTHON
+py -3 -m venv ".venv"
+
+:CHECAR_VENV
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 if errorlevel 1 goto ERRO_VENV
 if not exist "%PYTHON_VENV%" goto ERRO_VENV
 
 :CHECAR_DEPENDENCIAS
 echo [2/3] Conferindo bibliotecas...
+<<<<<<< HEAD
 "%PYTHON_VENV%" -c "import cv2; from PySide6 import QtWidgets; import dotenv; import google.generativeai; import pyttsx3" >nul 2>&1
+=======
+"%PYTHON_VENV%" -c "import cv2, cv2_enumerate_cameras; from PySide6 import QtWidgets, QtTextToSpeech" >nul 2>&1
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 if not errorlevel 1 goto INICIAR
 
 echo Instalando as dependencias do PONTE...
 echo Na primeira instalacao, e necessario acesso a internet.
+<<<<<<< HEAD
 "%PYTHON_VENV%" -m pip install -r "requirements.txt"
 if errorlevel 1 goto ERRO_DEPENDENCIAS
 
 "%PYTHON_VENV%" -c "import cv2; from PySide6 import QtWidgets; import dotenv; import google.generativeai; import pyttsx3" >nul 2>&1
+=======
+"%PYTHON_VENV%" -m pip install -r "requirements-interface.txt"
+if errorlevel 1 goto ERRO_DEPENDENCIAS
+
+"%PYTHON_VENV%" -c "import cv2, cv2_enumerate_cameras; from PySide6 import QtWidgets, QtTextToSpeech" >nul 2>&1
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 if errorlevel 1 goto ERRO_DEPENDENCIAS
 
 :INICIAR
@@ -52,7 +81,11 @@ echo ERRO: Nao foi possivel acessar a pasta do projeto.
 goto FALHA
 
 :ERRO_ARQUIVOS
+<<<<<<< HEAD
 echo ERRO: Arquivos interface.py ou requirements.txt nao encontrados.
+=======
+echo ERRO: Arquivos interface.py ou requirements-interface.txt nao encontrados.
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 echo Mantenha este .bat na pasta principal do repositorio PONTE.
 goto FALHA
 

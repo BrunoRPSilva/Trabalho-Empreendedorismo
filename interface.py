@@ -1,10 +1,19 @@
+<<<<<<< HEAD
 """PONTE | Interface gráfica com webcam real (IA e voz ainda simuladas).
+=======
+"""PONTE | Interface gráfica com webcam, tradução simulada e voz local.
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 
 Execute com: python interface.py
 Requer: PySide6 e opencv-python
 
+<<<<<<< HEAD
 A webcam é mostrada na janela Qt. O Gemini e a voz permanecem
 independentes nesta fase e ainda NÃO reconhecem/traduzem sinais.
+=======
+A webcam é mostrada na janela Qt. As frases de demonstração são
+predefinidas e podem ser lidas pela síntese de voz do sistema.
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 """
 
 from __future__ import annotations
@@ -14,6 +23,7 @@ import sys
 import cv2
 from datetime import datetime
 from pathlib import Path
+<<<<<<< HEAD
 
 from PySide6.QtCore import Qt, QRectF, QSize, QTimer
 from PySide6.QtGui import QColor, QFont, QIcon, QImage, QPainter, QPainterPath, QPixmap
@@ -22,6 +32,21 @@ from PySide6.QtWidgets import (
     QMessageBox, QPushButton, QSizePolicy, QVBoxLayout, QWidget, QInputDialog,
 )
 
+=======
+from time import monotonic
+
+from PySide6.QtCore import Qt, QRectF, QSettings, QThread, Signal
+from PySide6.QtGui import QColor, QFont, QIcon, QImage, QPainter, QPainterPath, QPixmap
+from PySide6.QtTextToSpeech import QTextToSpeech
+from PySide6.QtWidgets import (
+    QApplication, QBoxLayout, QFrame, QHBoxLayout, QLabel, QMainWindow,
+    QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget, QInputDialog,
+)
+
+if sys.platform == "win32":
+    from cv2_enumerate_cameras import enumerate_cameras
+
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 BASE_DIR = Path(__file__).resolve().parent
 ASSETS_DIR = BASE_DIR / "assets"
 
@@ -38,7 +63,11 @@ C = {
 }
 
 STYLESHEET = f"""
+<<<<<<< HEAD
 QMainWindow, #root {{ background-color: {C['bg']}; }}
+=======
+QMainWindow, #root, QScrollArea {{ background-color: {C['bg']}; }}
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 QWidget {{ font-family: 'Segoe UI', 'Arial', sans-serif; color: {C['text']}; }}
 QFrame#card {{
     background-color: white;
@@ -160,12 +189,16 @@ class CameraPreview(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def show_frame(self, frame):
+<<<<<<< HEAD
         """Converte um quadro BGR (OpenCV) para uma imagem independente do Qt."""
         height, width = frame.shape[:2]
         image = QImage(
             frame.data, width, height, frame.strides[0], QImage.Format.Format_BGR888
         ).copy()  # Copiar: o OpenCV reutiliza a memória do quadro seguinte.
         self.pixmap = QPixmap.fromImage(image)
+=======
+        self.pixmap = QPixmap.fromImage(frame)
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
         self.live = True
         self.update()
 
@@ -198,7 +231,12 @@ class CameraPreview(QWidget):
         else:
             painter.setPen(QColor(C["muted"]))
             painter.setFont(QFont("Segoe UI", 13))
+<<<<<<< HEAD
             painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.message)
+=======
+            flags = Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap
+            painter.drawText(rect.adjusted(12, 0, -12, 0), int(flags), self.message)
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 
         if self.live:
             badge = QRectF(self.width() - 134, 12, 122, 34)
@@ -213,8 +251,102 @@ class CameraPreview(QWidget):
         painter.end()
 
 
+<<<<<<< HEAD
 class PonteWindow(QMainWindow):
     """Controla câmera e interface. Tradução/voz continuam em demonstração."""
+=======
+def camera_candidates(index):
+    if sys.platform != "win32":
+        yield (max(index, 0), cv2.CAP_ANY, f"Dispositivo {max(index, 0)}", False)
+        return
+    if index >= 0:
+        for backend in (cv2.CAP_DSHOW, cv2.CAP_ANY):
+            yield index, backend, f"Dispositivo {index}", False
+        return
+
+    candidates = []
+    for backend in (cv2.CAP_DSHOW, cv2.CAP_MSMF):
+        try:
+            devices = enumerate_cameras(backend)
+        except (RuntimeError, OSError):
+            continue
+        for device in devices:
+            name = device.name.casefold()
+            path = (device.path or "").casefold()
+            if "droidcam" in name:
+                priority = 2
+            elif any(word in name for word in ("obs virtual", "iriun", "camo", "manycam", "snap camera")):
+                continue
+            elif (any(word in name for word in ("phone link", "link to windows", "vincular ao windows",
+                                                "connected camera", "câmera conectada", "mobile device camera"))
+                  or "vcamdevapi" in path or "crossdevice" in path):
+                priority = 1
+            elif "virtual" in name or path.startswith(r"\\?\root#"):
+                continue
+            else:
+                priority = 0
+            backend_order = backend != (cv2.CAP_MSMF if priority == 1 else cv2.CAP_DSHOW)
+            candidates.append((priority, backend_order, device))
+    for priority, _, device in sorted(candidates, key=lambda candidate: candidate[:2]):
+        yield device.index, device.backend, device.name, priority > 0
+
+
+class CameraWorker(QThread):
+    frame_ready = Signal(QImage)
+    failed = Signal(str)
+    trying = Signal(str)
+
+    def __init__(self, index, parent):
+        super().__init__(parent)
+        self.index = index
+
+    def run(self):
+        found_device = False
+        for index, backend, name, virtual in camera_candidates(self.index):
+            if self.isInterruptionRequested():
+                return
+            found_device = True
+            self.trying.emit(name)
+            self._capture(index, backend, virtual)
+        if not self.isInterruptionRequested():
+            self.failed.emit(
+                "As câmeras encontradas não enviaram imagem."
+                if found_device else "Nenhuma webcam, câmera vinculada ou DroidCam foi encontrada."
+            )
+
+    def _capture(self, index, backend, virtual):
+        capture = None
+        try:
+            capture = cv2.VideoCapture(index, backend)
+            if not capture.isOpened():
+                return
+            deadline = monotonic() + (8 if virtual else 3)
+            while not self.isInterruptionRequested():
+                success, frame = capture.read()
+                if success and frame is not None and frame.size and not (virtual and self._green_frame(frame)):
+                    deadline = monotonic() + 2
+                    height, width = frame.shape[:2]
+                    image = QImage(
+                        frame.data, width, height, frame.strides[0], QImage.Format.Format_BGR888
+                    ).copy()
+                    self.frame_ready.emit(image)
+                elif monotonic() >= deadline:
+                    return
+                self.msleep(25)
+        except cv2.error:
+            return
+        finally:
+            if capture is not None:
+                capture.release()
+
+    @staticmethod
+    def _green_frame(frame):
+        sample = frame[::32, ::32]
+        return bool(((sample[..., 1] >= 230) & (sample[..., 0] <= 25) & (sample[..., 2] <= 25)).all())
+
+
+class PonteWindow(QMainWindow):
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 
     EXEMPLOS = ["Olá, tudo bem?", "Eu quero água.", "Obrigado.", "Bom dia!", "Preciso de ajuda."]
 
@@ -222,6 +354,7 @@ class PonteWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("PONTE — Tradutor de Libras com IA (Interface)")
         self.setWindowIcon(QIcon(str(ASSETS_DIR / "ponte_icon.png")))
+<<<<<<< HEAD
         self.setMinimumSize(1050, 720)
         self.resize(1390, 820)
         self.running = False
@@ -235,11 +368,46 @@ class PonteWindow(QMainWindow):
         self.camera_timer.timeout.connect(self._update_camera_frame)
         self._build_ui()
         self._refresh_history()
+=======
+        self.setMinimumSize(800, 480)
+        self.resize(1200, 760)
+        self.example_index = 0
+        self.history: list[tuple[str, str]] = []
+        self.settings = QSettings("PONTE", "PONTE")
+        self.camera_index = self.settings.value("camera/selection", -1, type=int)
+        self.camera_name = ""
+        self.camera_worker = None
+        self.camera_error = ""
+        self.closing = False
+        self._build_ui()
+        self.voice = QTextToSpeech(self)
+        if (sys.platform == "win32" and self.voice.state() == QTextToSpeech.State.Error
+                and "sapi" in QTextToSpeech.availableEngines()):
+            self.voice.setEngine("sapi")
+        self.voice.stateChanged.connect(self._refresh_demo_controls)
+        self.voice.errorOccurred.connect(self._voice_error)
+        for locale in self.voice.availableLocales():
+            if locale.name() == "pt_BR":
+                self.voice.setLocale(locale)
+                break
+        self._refresh_history()
+        self._refresh_demo_controls()
+        if self.voice.state() == QTextToSpeech.State.Error:
+            self.voice_info.setText("Confira as vozes instaladas no sistema.")
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 
     def _build_ui(self):
         root = QWidget()
         root.setObjectName("root")
+<<<<<<< HEAD
         self.setCentralWidget(root)
+=======
+        scroll_area = QScrollArea()
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(root)
+        self.setCentralWidget(scroll_area)
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
         all_layout = QVBoxLayout(root)
         all_layout.setContentsMargins(20, 18, 20, 18)
         all_layout.setSpacing(16)
@@ -247,9 +415,18 @@ class PonteWindow(QMainWindow):
         # CABEÇALHO ---------------------------------------------------------
         header = QFrame()
         header.setObjectName("header")
+<<<<<<< HEAD
         header_row = QHBoxLayout(header)
         header_row.setContentsMargins(6, 0, 6, 0)
         header_row.setSpacing(20)
+=======
+        self.header_layout = QBoxLayout(QBoxLayout.Direction.LeftToRight, header)
+        self.header_layout.setContentsMargins(6, 0, 6, 0)
+        self.header_layout.setSpacing(12)
+        header_row = QHBoxLayout()
+        header_row.setSpacing(14)
+        self.header_layout.addLayout(header_row, 1)
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 
         logo = QLabel()
         logo.setPixmap(QPixmap(str(ASSETS_DIR / "ponte_icon.png")).scaled(
@@ -266,6 +443,7 @@ class PonteWindow(QMainWindow):
         header_row.addStretch(1)
         camera_pill, self.camera_status_text = status_pill("◉", "Câmera: desligada")
         ai_pill, _ = status_pill("◇", "IA: desconectada")
+<<<<<<< HEAD
         voice_pill, _ = status_pill("♪", "Voz: desconectada")
         header_row.addWidget(camera_pill)
         header_row.addWidget(ai_pill)
@@ -274,6 +452,20 @@ class PonteWindow(QMainWindow):
 
         # CONTEÚDO: DIVISÃO ESQUERDA/DIREITA -------------------------------
         columns = QHBoxLayout()
+=======
+        voice_pill, self.voice_status_text = status_pill("♪", "Voz: local")
+        status_row = QHBoxLayout()
+        status_row.setSpacing(8)
+        status_row.addWidget(camera_pill)
+        status_row.addWidget(ai_pill)
+        status_row.addWidget(voice_pill)
+        self.header_layout.addLayout(status_row)
+        all_layout.addWidget(header)
+
+        # CONTEÚDO: DIVISÃO ESQUERDA/DIREITA -------------------------------
+        columns = QBoxLayout(QBoxLayout.Direction.LeftToRight)
+        self.columns = columns
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
         columns.setSpacing(15)
         all_layout.addLayout(columns, 1)
 
@@ -282,7 +474,13 @@ class PonteWindow(QMainWindow):
         camera_col.addWidget(section_title("▣  Pré-visualização da câmera"))
         self.camera = CameraPreview()
         camera_col.addWidget(self.camera, 1)
+<<<<<<< HEAD
         self.camera_info = text_label("●  Câmera desligada — clique em Iniciar", 10, False, C["muted"])
+=======
+        self.camera_info = text_label(self._camera_selection_text(), 10, False, C["muted"])
+        self.camera_info.setTextFormat(Qt.TextFormat.PlainText)
+        self.camera_info.setWordWrap(True)
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
         camera_col.addWidget(self.camera_info)
         columns.addWidget(camera_card, 47)
 
@@ -308,13 +506,21 @@ class PonteWindow(QMainWindow):
         self.translation_text.setWordWrap(True)
         self.translation_text.setMinimumHeight(60)
         translation_area.addWidget(self.translation_text)
+<<<<<<< HEAD
         self.translation_hint = text_label("Nenhum vídeo foi enviado à IA.", 10, False, C["muted"])
+=======
+        self.translation_hint = text_label("Use “Simular tradução” para testar a interface.", 10, False, C["muted"])
+        self.translation_hint.setWordWrap(True)
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
         translation_area.addWidget(self.translation_hint)
         control_row = QHBoxLayout()
         control_row.addStretch()
         self.simulate_button = QPushButton("▶  Simular tradução")
         self.simulate_button.setObjectName("simulate")
+<<<<<<< HEAD
         self.simulate_button.setEnabled(False)
+=======
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
         self.simulate_button.clicked.connect(self.simulate_translation)
         control_row.addWidget(self.simulate_button)
         translation_area.addLayout(control_row)
@@ -329,7 +535,13 @@ class PonteWindow(QMainWindow):
         audio_info = QVBoxLayout()
         audio_info.setSpacing(2)
         audio_info.addWidget(text_label("Saída de voz", 15, True, C["navy"]))
+<<<<<<< HEAD
         audio_info.addWidget(text_label("Reprodução de texto em áudio", 10, False, C["muted"]))
+=======
+        self.voice_info = text_label("Leitura da frase pelo sistema", 10, False, C["muted"])
+        self.voice_info.setWordWrap(True)
+        audio_info.addWidget(self.voice_info)
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
         audio_row.addLayout(audio_info)
         audio_row.addStretch()
         self.voice_button = QPushButton("▶  Reproduzir")
@@ -392,12 +604,26 @@ class PonteWindow(QMainWindow):
         all_layout.addWidget(controls)
 
         notice = text_label(
+<<<<<<< HEAD
             "Câmera real disponível • A tradução e a saída de voz ainda são demonstrações.",
+=======
+            "A demonstração usa frases de exemplo. A voz lê a frase exibida.",
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
             9, False, C["muted"]
         )
         notice.setAlignment(Qt.AlignmentFlag.AlignCenter)
         all_layout.addWidget(notice)
 
+<<<<<<< HEAD
+=======
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        direction = (QBoxLayout.Direction.LeftToRight if event.size().width() >= 1080
+                     else QBoxLayout.Direction.TopToBottom)
+        self.header_layout.setDirection(direction)
+        self.columns.setDirection(direction)
+
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
     def _refresh_history(self):
         # Remove widgets antigos; cria linhas a partir do histórico atual.
         while self.history_container.count():
@@ -410,7 +636,11 @@ class PonteWindow(QMainWindow):
             empty.setWordWrap(True)
             self.history_container.addWidget(empty)
             return
+<<<<<<< HEAD
         for phrase, moment in self.history[:3]:
+=======
+        for phrase, moment in self.history:
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
             row = QFrame()
             row.setObjectName("historyItem")
             line = QHBoxLayout(row)
@@ -423,6 +653,7 @@ class PonteWindow(QMainWindow):
             self.history_container.addWidget(row)
 
     def start_camera(self):
+<<<<<<< HEAD
         """Abre a webcam do Windows, sem usar cv2.imshow()."""
         if self.running:
             return
@@ -550,6 +781,146 @@ class PonteWindow(QMainWindow):
         super().closeEvent(event)
 
 
+=======
+        if self.camera_worker is not None:
+            return
+        self.camera_error = ""
+        self.camera_worker = CameraWorker(self.camera_index, self)
+        self.camera_worker.trying.connect(self._trying_camera)
+        self.camera_worker.frame_ready.connect(self._show_camera_frame)
+        self.camera_worker.failed.connect(self._camera_failed)
+        self.camera_worker.finished.connect(self._camera_finished)
+        self.start_button.setEnabled(False)
+        self.pause_button.setEnabled(True)
+        self.settings_button.setEnabled(False)
+        self.camera_status_text.setText("Câmera: conectando")
+        self.camera_info.setText("Procurando câmeras…")
+        self.camera.show_placeholder("Conectando à câmera…")
+        self.camera_worker.start()
+
+    def _trying_camera(self, name):
+        if not self.pause_button.isEnabled():
+            return
+        self.camera_name = name
+        self.camera_status_text.setText("Câmera: conectando")
+        self.camera_info.setText(f"Testando {name}…")
+        self.camera.show_placeholder("Conectando à câmera…")
+
+    def _show_camera_frame(self, frame):
+        if not self.pause_button.isEnabled() or self.camera_error:
+            return
+        if not self.camera.live:
+            self.camera_status_text.setText("Câmera: conectada")
+            self.camera_info.setText(f"Ao vivo • {self.camera_name}")
+        self.camera.show_frame(frame)
+
+    def pause_camera(self):
+        if self.camera_worker is None:
+            return
+        self.camera_worker.requestInterruption()
+        self.pause_button.setEnabled(False)
+        self.camera_status_text.setText("Câmera: pausando")
+        self.camera_info.setText("Liberando o dispositivo…")
+        self.camera.show_placeholder("Pausando a câmera…")
+
+    def _camera_failed(self, message):
+        if self.pause_button.isEnabled():
+            self.camera_error = message
+
+    def _camera_finished(self):
+        self.camera_worker.deleteLater()
+        self.camera_worker = None
+        if self.closing:
+            self.close()
+            return
+        self.start_button.setEnabled(True)
+        self.pause_button.setEnabled(False)
+        self.settings_button.setEnabled(True)
+        if self.camera_error:
+            self.camera_status_text.setText("Câmera: indisponível")
+            self.camera_info.setText(self.camera_error)
+            self.camera.show_placeholder("Confira a conexão ou escolha outra câmera.\nClique em Iniciar para tentar de novo.")
+        else:
+            self.camera_status_text.setText("Câmera: pausada")
+            self.camera_info.setText("Captura pausada • dispositivo liberado")
+            self.camera.show_placeholder("Câmera pausada\nClique em Iniciar para retomar.")
+
+    def simulate_translation(self):
+        self.voice.stop()
+        self.voice_info.setText("Leitura da frase pelo sistema")
+        phrase = self.EXEMPLOS[self.example_index % len(self.EXEMPLOS)]
+        self.example_index += 1
+        self.translation_text.setText(phrase)
+        self.translation_hint.setText("Frase de demonstração")
+        self.time_label.setText("2,1 s")
+        self.history.insert(0, (phrase, datetime.now().strftime("%H:%M")))
+        del self.history[3:]
+        self._refresh_history()
+        self._refresh_demo_controls()
+
+    def clear_demo(self):
+        self.voice.stop()
+        self.voice_info.setText("Leitura da frase pelo sistema")
+        self.example_index = 0
+        self.history.clear()
+        self.translation_text.setText("Aguardando tradução...")
+        self.translation_hint.setText("Use “Simular tradução” para testar a interface.")
+        self.time_label.setText("—")
+        self._refresh_history()
+        self._refresh_demo_controls()
+
+    def _refresh_demo_controls(self):
+        state = self.voice.state()
+        available = state != QTextToSpeech.State.Error
+        playing = state in (QTextToSpeech.State.Speaking, QTextToSpeech.State.Synthesizing)
+        self.voice_status_text.setText("Voz: local" if available else "Voz: indisponível")
+        self.voice_button.setText("■  Parar" if playing else "▶  Reproduzir")
+        self.voice_button.setEnabled(available and bool(self.history))
+        self.clear_button.setEnabled(bool(self.history))
+
+    def _voice_error(self, _reason, _message):
+        self.voice_info.setText("Falha na reprodução. Confira as vozes instaladas no sistema.")
+
+    def reproduce(self):
+        if self.voice.state() in (QTextToSpeech.State.Speaking, QTextToSpeech.State.Synthesizing):
+            self.voice.stop()
+        elif self.history:
+            self.voice_info.setText("Leitura da frase pelo sistema")
+            self.voice.say(self.history[0][0])
+
+    def show_settings(self):
+        if self.camera_worker is not None:
+            return
+        options = ["Automática"] + [f"Dispositivo {index}" for index in range(10)]
+        selected, confirmed = QInputDialog.getItem(
+            self, "Configurações da câmera",
+            "Seleção da câmera:", options, self.camera_index + 1, False
+        )
+        if confirmed:
+            self.camera_index = options.index(selected) - 1
+            self.settings.setValue("camera/selection", self.camera_index)
+            self.camera_status_text.setText("Câmera: desligada")
+            self.camera_info.setText(self._camera_selection_text())
+            self.camera.show_placeholder("Câmera desligada\nClique em Iniciar para exibir a imagem.")
+
+    def _camera_selection_text(self):
+        if self.camera_index == -1:
+            return "Automática • webcam do PC, câmera vinculada, DroidCam"
+        return f"Dispositivo {self.camera_index} selecionado"
+
+    def closeEvent(self, event):
+        self.voice.stop()
+        if self.camera_worker is not None:
+            self.closing = True
+            self.pause_camera()
+            self.centralWidget().setEnabled(False)
+            event.ignore()
+            return
+        super().closeEvent(event)
+
+
+
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
