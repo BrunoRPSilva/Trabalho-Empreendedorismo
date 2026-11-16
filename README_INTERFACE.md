@@ -1,6 +1,10 @@
 # PONTE — Interface gráfica com câmera real (PySide6)
 
+<<<<<<< HEAD
 Interface desktop do PONTE com captura de webcam via OpenCV, inclusive câmeras virtuais de celulares reconhecidas pelo Windows 11. **A tradução com Gemini e a reprodução de voz ainda não estão integradas**: o botão de simular tradução insere frases de exemplo.
+=======
+Interface desktop do PONTE com captura de webcam via OpenCV, inclusive câmeras virtuais de celulares reconhecidas pelo Windows 11. O modo de demonstração exibe frases predefinidas e permite ouvi-las com a voz do sistema. O reconhecimento de Libras com Gemini aguarda integração.
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 
 ## Arquivos
 
@@ -16,7 +20,11 @@ A interface não altera `main.py`, `ai_service.py` ou `voice_service.py`.
 
 1. Instale **Python 3.10 ou superior** no computador. No dia da apresentacao, confirme antes que a camera do celular esta conectada ao Windows e feche o aplicativo Camera para liberar o dispositivo.
 2. Na pasta raiz do projeto, clique duas vezes em **`Iniciar_PONTE.bat`**.
+<<<<<<< HEAD
 3. O script cria `.venv` se necessario, verifica as bibliotecas, instala as que faltarem usando `requirements.txt` e abre `interface.py`.
+=======
+3. O script cria `.venv` se necessário, verifica as bibliotecas, instala as que faltarem usando `requirements-interface.txt` e abre `interface.py`.
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 4. A **primeira execucao precisa de internet** para baixar pacotes. Depois, se o ambiente e as bibliotecas ja estiverem instalados, pode iniciar sem internet. A traducao pelo Gemini ainda nao esta conectada a interface.
 5. Clique em **Iniciar** na janela para ativar a webcam. Se nao abrir, pause outros programas que estejam usando a camera e ajuste o indice em **Configuracoes**.
 
@@ -34,6 +42,7 @@ Se você já tem `.venv`, basta atualizar os pacotes com o comando `pip install 
 
 ## Como usar
 
+<<<<<<< HEAD
 1. Conecte seu celular como webcam no Windows 11 e confirme o funcionamento no aplicativo **Câmera** (ou com `teste_camera.py`). Feche os programas de teste antes de iniciar o PONTE.
 2. Execute `interface.py` e clique **Iniciar**. O vídeo do celular aparece **dentro** do painel esquerdo.
 3. **Pausar** interrompe a captura e libera o dispositivo.
@@ -41,6 +50,16 @@ Se você já tem `.venv`, basta atualizar os pacotes com o comando `pip install 
 5. **Simular tradução** atualiza a interface com uma frase fictícia. **Não é** reconhecimento de Libras.
 6. **Limpar** apaga o histórico, texto e tempo ilustrativo, mas não desliga a webcam.
 7. Ao fechar o programa, a câmera é liberada automaticamente.
+=======
+1. Se for usar o celular, habilite **Usar como câmera conectada** no Windows 11 ou conecte o celular no cliente DroidCam.
+2. Clique em **Iniciar**. No Windows, o modo automático tenta a webcam do PC, a câmera conectada do Windows 11 e o DroidCam, nessa ordem. A prévia e o nome da câmera escolhida aparecem no painel esquerdo.
+3. **Pausar** interrompe a captura e libera o dispositivo.
+4. **Configurações** permite escolher entre o modo automático e um índice manual (0 a 9). Pause antes de trocar. A escolha é salva para a próxima vez.
+5. **Simular tradução** exibe uma frase de exemplo mesmo com a câmera desligada e mostra as três frases mais recentes no histórico.
+6. **Reproduzir** lê a frase exibida com a voz do sistema. A interface usa uma voz em português do Brasil quando disponível. Use **Parar** para interromper a leitura.
+7. **Limpar** apaga o histórico, o texto e o tempo ilustrativo. A captura da câmera pode continuar durante essa ação.
+8. Ao fechar o programa, a câmera é liberada automaticamente.
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
 
 ## Problemas comuns
 
@@ -51,4 +70,8 @@ Se você já tem `.venv`, basta atualizar os pacotes com o comando `pip install 
 
 ## Próximos passos
 
+<<<<<<< HEAD
 Integrar o reconhecimento de Libras de `main.py` e o serviço de IA com um worker em segundo plano (`QThread`/signals), sem bloquear os eventos do PySide6. As traduções e a síntese de voz continuam desconectadas nesta etapa.
+=======
+Integrar o reconhecimento de Libras de `main.py` e o serviço de IA com um worker em segundo plano (`QThread`/signals).
+>>>>>>> 77017d18177235cca273849013d376c36475f3e8
