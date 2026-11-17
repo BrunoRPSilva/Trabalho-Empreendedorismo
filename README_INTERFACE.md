@@ -1,77 +1,40 @@
-# PONTE — Interface gráfica com câmera real (PySide6)
+# PONTE — execução local no Windows
 
-<<<<<<< HEAD
-Interface desktop do PONTE com captura de webcam via OpenCV, inclusive câmeras virtuais de celulares reconhecidas pelo Windows 11. **A tradução com Gemini e a reprodução de voz ainda não estão integradas**: o botão de simular tradução insere frases de exemplo.
-=======
-Interface desktop do PONTE com captura de webcam via OpenCV, inclusive câmeras virtuais de celulares reconhecidas pelo Windows 11. O modo de demonstração exibe frases predefinidas e permite ouvi-las com a voz do sistema. O reconhecimento de Libras com Gemini aguarda integração.
->>>>>>> 77017d18177235cca273849013d376c36475f3e8
+O PONTE é um protótipo desktop. A câmera é local; ao clicar em **Gravar e traduzir**, um vídeo de três segundos é enviado à API Gemini para uma interpretação experimental. A opção **Simular tradução** funciona sem chave e apresenta frases de exemplo. A voz usa os recursos instalados no Windows.
 
-## Arquivos
+## Instalação
 
-- `interface.py`: janela desktop com transmissão de webcam, texto, histórico, botões e configurações.
-- `requirements-interface.txt`: bibliotecas PySide6 e OpenCV.
-- `assets/ponte_icon.png`: ícone do programa.
-- `assets/camera_exemplo.jpg`: imagem do template antigo (a interface atual não usa essa foto).
-- `teste_camera.py`: teste independente da webcam existente no repositório.
+1. Instale Python 3.10 ou superior e permita seu uso no terminal.
+2. Abra a pasta do projeto e dê dois cliques em `Iniciar_PONTE.bat`. Na primeira execução, o programa cria `.venv` e instala as dependências; é necessária internet.
+3. Para tradução com IA, crie na pasta do projeto um arquivo chamado `.env` com este conteúdo, substituindo o valor pela sua chave da API Gemini:
 
-A interface não altera `main.py`, `ai_service.py` ou `voice_service.py`.
+   ```text
+   GEMINI_API_TOKEN=sua_chave_aqui
+   GEMINI_MODEL=gemini-3.5-flash-lite
+   ```
 
-## Iniciar com dois cliques no Windows
+   Gere a chave no [Google AI Studio](https://aistudio.google.com/apikey). A disponibilidade do modelo, cotas e custos dependem da conta. Se necessário, ajuste `GEMINI_MODEL` para um modelo disponível para sua conta que aceite vídeo. Guarde a chave em segredo e não compartilhe o arquivo `.env`.
+4. Reinicie o aplicativo, clique em **Iniciar** para abrir a câmera e em **Gravar e traduzir** para fazer um sinal durante três segundos. Depois aguarde a resposta. Clique em **Reproduzir** para ouvi-la.
 
-1. Instale **Python 3.10 ou superior** no computador. No dia da apresentacao, confirme antes que a camera do celular esta conectada ao Windows e feche o aplicativo Camera para liberar o dispositivo.
-2. Na pasta raiz do projeto, clique duas vezes em **`Iniciar_PONTE.bat`**.
-<<<<<<< HEAD
-3. O script cria `.venv` se necessario, verifica as bibliotecas, instala as que faltarem usando `requirements.txt` e abre `interface.py`.
-=======
-3. O script cria `.venv` se necessário, verifica as bibliotecas, instala as que faltarem usando `requirements-interface.txt` e abre `interface.py`.
->>>>>>> 77017d18177235cca273849013d376c36475f3e8
-4. A **primeira execucao precisa de internet** para baixar pacotes. Depois, se o ambiente e as bibliotecas ja estiverem instalados, pode iniciar sem internet. A traducao pelo Gemini ainda nao esta conectada a interface.
-5. Clique em **Iniciar** na janela para ativar a webcam. Se nao abrir, pause outros programas que estejam usando a camera e ajuste o indice em **Configuracoes**.
-
-O iniciador **nao instala o Python nem configura a chave da API**. Ele abre somente o front-end atual; nao execute `main.py` ao mesmo tempo porque ambos podem tentar abrir a mesma camera. Se o arquivo nao iniciar por duplo clique, rode `cmd /c Iniciar_PONTE.bat` no terminal para ver o erro.
-
-## Instalação no Windows (PowerShell, VS Code)
+Também é possível iniciar pelo PowerShell:
 
 ```powershell
-py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-interface.txt
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe interface.py
 ```
 
-Se você já tem `.venv`, basta atualizar os pacotes com o comando `pip install -r` acima e iniciar a interface.
+Se a câmera não abrir, feche outros programas que a utilizem e selecione outro dispositivo em **Configurações**. Para testar apenas a interface e a voz, use **Simular tradução**. O arquivo `main.py` é um protótipo independente; a aplicação principal é `interface.py` e os dois não devem usar a câmera simultaneamente.
 
-## Como usar
+O reconhecimento por um modelo geral de IA pode estar incorreto. Não use os resultados como tradução confiável de Libras sem validação com pessoas surdas. O vídeo é enviado ao Google para processamento; obtenha o consentimento das pessoas filmadas.
 
-<<<<<<< HEAD
-1. Conecte seu celular como webcam no Windows 11 e confirme o funcionamento no aplicativo **Câmera** (ou com `teste_camera.py`). Feche os programas de teste antes de iniciar o PONTE.
-2. Execute `interface.py` e clique **Iniciar**. O vídeo do celular aparece **dentro** do painel esquerdo.
-3. **Pausar** interrompe a captura e libera o dispositivo.
-4. **Configurações** permite trocar o índice da câmera (0 a 9) se o Windows usar outro número. Pause antes de trocar.
-5. **Simular tradução** atualiza a interface com uma frase fictícia. **Não é** reconhecimento de Libras.
-6. **Limpar** apaga o histórico, texto e tempo ilustrativo, mas não desliga a webcam.
-7. Ao fechar o programa, a câmera é liberada automaticamente.
-=======
-1. Se for usar o celular, habilite **Usar como câmera conectada** no Windows 11 ou conecte o celular no cliente DroidCam.
-2. Clique em **Iniciar**. No Windows, o modo automático tenta a webcam do PC, a câmera conectada do Windows 11 e o DroidCam, nessa ordem. A prévia e o nome da câmera escolhida aparecem no painel esquerdo.
-3. **Pausar** interrompe a captura e libera o dispositivo.
-4. **Configurações** permite escolher entre o modo automático e um índice manual (0 a 9). Pause antes de trocar. A escolha é salva para a próxima vez.
-5. **Simular tradução** exibe uma frase de exemplo mesmo com a câmera desligada e mostra as três frases mais recentes no histórico.
-6. **Reproduzir** lê a frase exibida com a voz do sistema. A interface usa uma voz em português do Brasil quando disponível. Use **Parar** para interromper a leitura.
-7. **Limpar** apaga o histórico, o texto e o tempo ilustrativo. A captura da câmera pode continuar durante essa ação.
-8. Ao fechar o programa, a câmera é liberada automaticamente.
->>>>>>> 77017d18177235cca273849013d376c36475f3e8
+## Consultas com imagens
 
-## Problemas comuns
+Clique em **Imagens e sinais** e escolha uma das abas:
 
-- **A câmera não abre:** confirme que ela ainda aparece no aplicativo Câmera do Windows, feche outros programas que a estejam usando e escolha outro índice em Configurações.
-- **A imagem parou:** confira se o celular segue vinculado, reative a câmera conectada e clique Iniciar novamente.
-- **`ModuleNotFoundError: No module named 'cv2'`:** instale o `requirements-interface.txt` no mesmo ambiente do Python usado para abrir a janela.
-- **Imagem espelhada:** depende da câmera virtual do Windows/celular; o código mostra os quadros como são recebidos, sem espelhar artificialmente.
+- **Frase → Libras:** digite uma palavra ou frase em português, aguarde o avatar carregar e clique em **Traduzir em Libras**. O serviço público VLibras recebe o texto, produz uma tradução automática e reproduz os sinais em um avatar animado. A glosa exibida é uma representação textual da tradução, não uma frase em português. Não é necessário usar a chave do Gemini nesta opção. A primeira abertura do avatar pode demorar e precisa de internet. Se o VLibras perguntar sobre coleta de dados anônimos, escolha a opção desejada no próprio widget.
+- **Imagens → português:** adicione até oito arquivos PNG, JPEG ou WEBP (máximo de 14 MB no total), arraste-os para definir a ordem e clique em **Analisar imagens com IA**. Redimensione ou maximize a janela e arraste as divisórias para ajustar os espaços da lista, prévia e resultado; em telas menores, a aba também oferece rolagem. As imagens são enviadas ao Gemini. Se uma figura tiver vários sinais e legendas, a análise poderá relatar cada um; não se presume que formem uma frase. A resposta é experimental e imagens estáticas nem sempre mostram movimentos ou expressões necessárias para identificar um sinal.
 
-## Próximos passos
+O VLibras é uma ferramenta de Libras do Brasil. Seu acervo é consultado online; o PONTE não baixa todos os sinais para o computador. A ferramenta não cobre necessariamente todos os sinais nem substitui intérprete ou a validação por pessoas surdas. Para ajustar variações regionais, abra as configurações do avatar e escolha a região desejada; quando não houver sinal regional, o VLibras consulta o dicionário nacional.
 
-<<<<<<< HEAD
-Integrar o reconhecimento de Libras de `main.py` e o serviço de IA com um worker em segundo plano (`QThread`/signals), sem bloquear os eventos do PySide6. As traduções e a síntese de voz continuam desconectadas nesta etapa.
-=======
-Integrar o reconhecimento de Libras de `main.py` e o serviço de IA com um worker em segundo plano (`QThread`/signals).
->>>>>>> 77017d18177235cca273849013d376c36475f3e8
+Vídeos curtos são enviados diretamente à API, com amostragem de cinco quadros por segundo para capturar mais detalhes dos movimentos. O tempo de resposta depende da rede e do serviço, e a amostragem maior pode aumentar o consumo de tokens.

@@ -1,6 +1,3 @@
 PySide6>=6.8,<7
 opencv-python>=4.8,<5
-<<<<<<< HEAD
-=======
 cv2-enumerate-cameras>=1.4,<2; sys_platform == "win32"
->>>>>>> 77017d18177235cca273849013d376c36475f3e8
