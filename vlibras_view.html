@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VLibras no PONTE</title>
+  <style>
+    html, body { height: 100%; margin: 0; font: 15px 'Segoe UI', Arial, sans-serif; color: #214e58; background: #edf6f6; }
+    main { box-sizing: border-box; padding: 24px; max-width: 420px; line-height: 1.5; }
+    h1 { margin: 0 0 8px; color: #083f4d; font-size: 20px; }
+    p { margin: 0 0 12px; }
+    #status { font-size: 13px; color: #4f7179; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Avatar em Libras</h1>
+    <p>O VLibras mostra a frase por meio de sinais animados. Use os controles do avatar para pausar, repetir ou mudar a velocidade.</p>
+    <p id="status" role="status">Carregando o VLibras. A primeira abertura pode demorar…</p>
+  </main>
+  <script>
+    window.ponteVlibrasError = false;
+    window.ponteScriptLoaded = false;
+    window.ponteResultado = { estado: 'ocioso' };
+    window.ponteRequestId = 0;
+    function startVlibras() {
+      window.ponteScriptLoaded = true;
+      const openWhenReady = function () {
+        if (window.VLibrasWidget && typeof window.VLibrasWidget.open === 'function') {
+          window.VLibrasWidget.open();
+        } else {
+          setTimeout(openWhenReady, 200);
+        }
+      };
+      openWhenReady();
+    }
+    function vlibrasLoadError() {
+      window.ponteVlibrasError = true;
+      document.getElementById('status').textContent = 'Não foi possível carregar o VLibras. Confira a conexão e tente novamente.';
+    }
+    function pontePlayerStatus() {
+      if (window.ponteVlibrasError) return 'erro';
+      if (window.vlibras && typeof window.vlibras.translate === 'function' && typeof window.vlibras.play === 'function') {
+        document.getElementById('status').textContent = 'Avatar pronto. Digite uma frase no PONTE e clique em Traduzir.';
+        return 'pronto';
+      }
+      return window.ponteScriptLoaded ? 'carregando-avatar' : 'carregando';
+    }
+    function ponteTraduzir(texto) {
+      if (pontePlayerStatus() !== 'pronto') return false;
+      const requestId = ++window.ponteRequestId;
+      window.ponteResultado = { estado: 'traduzindo' };
+      Promise.resolve(window.vlibras.translate(texto)).then(function (glosa) {
+        if (requestId !== window.ponteRequestId) return;
+        if (typeof glosa !== 'string' || !glosa.trim()) {
+          throw new Error('Tradução indisponível');
+        }
+        window.vlibras.play(glosa);
+        window.ponteResultado = { estado: 'pronto', glosa: glosa };
+        document.getElementById('status').textContent = 'Tradução recebida. Acompanhe os sinais no avatar.';
+      }).catch(function () {
+        if (requestId !== window.ponteRequestId) return;
+        window.ponteResultado = { estado: 'erro' };
+        document.getElementById('status').textContent = 'Não foi possível traduzir agora. Tente novamente.';
+      });
+      return true;
+    }
+  </script>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js" onload="startVlibras()" onerror="vlibrasLoadError()"></script>
+</body>
+</html>
